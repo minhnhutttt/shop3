@@ -1,25 +1,7 @@
 <template>
   <div class="products">
-    <div class="form-group">
-      <input
-        type="text"
-        v-model="product.name"
-        class="form-control"
-        id="exampleInputEmail1"
-        placeholder="Product name"
-      />
-    </div>
-    <div class="form-group">
-      <input
-        type="text"
-        v-model="product.price"
-        class="form-control"
-        id="exampleInputPassword1"
-        placeholder="Price"
-      />
-    </div>
-    <button @click="saveData" type="submit" class="btn btn-primary">
-      Submit
+    <button @click="addNew()" type="submit" class="btn btn-primary">
+      Add
     </button>
     <div class="pt-4">
       <h3 class="d-inline-block">Products list</h3>
@@ -36,21 +18,14 @@
           <tbody>
             <tr v-for="(product, index) in products" v-bind:key="index">
               <td>
-                {{ product.data().name }}
+                {{product.name}}
               </td>
               <td>
-                {{ product.data().price }}
+                {{product.price}}
               </td>
               <td>
-                <button @click="editProduct(product)" class="btn btn-primary">
-                  Edit
-                </button>
-                <button
-                  @click="deleteProduct(product.id)"
-                  class="btn btn-danger"
-                >
-                  Delete
-                </button>
+                <button class="btn btn-primary" @click="editProduct(product)">Eidt</button>
+                <button class="btn btn-danger" @click="deleteProduct(product['.key'])">Delete</button>
               </td>
             </tr>
           </tbody>
@@ -98,8 +73,106 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            <button @click="updateProduct()" type="button" class="btn btn-primary">Update</button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+            <button
+              @click="updateProduct()"
+              type="button"
+              class="btn btn-primary"
+            >
+              Update
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Button trigger modal -->
+
+    <!-- Modal -->
+    <div
+      class="modal fade"
+      id="addnew"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="exampleModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="container-fluid">
+              <div class="row">
+                <div class="col-sm-7">
+                  <div class="form-group">
+                    <input
+                      type="text"
+                      class="form-control"
+                      placeholder="Product name"
+                      v-model="product.name"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <textarea
+                      class="form-control"
+                      id="exampleFormControlTextarea1"
+                      rows="3"
+                      v-model="product.des"
+                    ></textarea>
+                  </div>
+                </div>
+                <div class="col-sm-5">
+                  <div class="form-group">
+                    <input
+                      type="text"
+                      class="form-control"
+                      placeholder="Product price"
+                      v-model="product.price"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <input
+                      type="text"
+                      class="form-control"
+                      placeholder="Product tag"
+                      v-model="product.tag"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <input
+                      type="file"
+                      class="form-control-file"
+                      id="exampleFormControlFile1"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+            <button @click="addProduct()" type="button" class="btn btn-primary">Save changes</button>
           </div>
         </div>
       </div>
@@ -109,93 +182,76 @@
 
 <script>
 import { fb, db } from "../firebase";
+import 'firebase/firestore';
+
 export default {
   name: "Products",
   props: {
-    msg: String
+    msg: String,
   },
   data() {
     return {
       product: {
         name: null,
-        price: null
+        des: null,
+        price: null,
+        tag: null,
+        image: null
       },
       products: [],
-      itemActive: null
+      itemActive: null,
     };
   },
+  firestore () {
+    return {
+      products: db.collection('products'),
+    }
+  },
   methods: {
-      watcher () {
-          db.collection("products").onSnapshot((querySnapshot) => {
-            this.products = [];
-            querySnapshot.forEach((doc) => {
-                this.products.push(doc);
-            });
-        });
-
-      },
+    addNew() {
+      $("#addnew").modal("show");
+    },
     deleteProduct(id) {
-      if (confirm("Are you sure?")) {
-        db.collection("products")
-          .doc(id)
-          .delete()
-          .then(() => {
-              this.watcher();
-            console.log("Document successfully deleted!");
-          })
-          .catch(function(error) {
-            console.error("Error removing document: ", error);
-          });
-      } else {
-        console.log("No");
+      Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+      if (result.value) {
+          this.$firestore.products.doc(id).delete()
+        Swal.fire(
+          'Deleted!',
+          'Your file has been deleted.',
+          'success'
+        )
       }
+    })
     },
-    editProduct(product) {
-        $('#edit').modal('show');
-        this.itemActive = product.id;
-        this.product = product.data();
+    editProduct(producta) {
+      this.product = product;
+     $("#addnew").modal("show");
     },
-    updateProduct () {
-        db.collection("products").doc(this.itemActive).update(this.product)
-        .then(() => {
-            $('#edit').modal('hide');
-            this.watcher();
-            console.log("Document successfully updated!");
-        })
-        .catch(function(error) {
-            // The document probably doesn't exist.
-            console.error("Error updating document: ", error);
-        });
-
+    updateProduct() {
+      
     },
     readData() {
-      db.collection("products")
-        .get()
-        .then(querySnapshot => {
-          querySnapshot.forEach(doc => {
-            this.products.push(doc);
-          });
-        });
+     
     },
-    saveData() {
-      db.collection("products")
-        .add(this.product)
-        .then(docRef => {
-          console.log("Document written with ID: ", docRef.id);
-          this.resetData();
-          this.readData();
-        })
-        .catch(function(error) {
-          console.error("Error adding document: ", error);
-        });
+    addProduct() {
+      this.$firestore.products.add(this.product);
+      $("#addnew").modal("hide");
     },
     resetData() {
       Object.assign(this.$data, this.$options.data());
-    }
+    },
   },
   created() {
     this.readData();
-  }
+  },
 };
 </script>
 
