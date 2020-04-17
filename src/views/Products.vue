@@ -102,7 +102,7 @@
       aria-labelledby="exampleModalLabel"
       aria-hidden="true"
     >
-      <div class="modal-dialog" role="document">
+      <div class="" role="document">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
@@ -128,12 +128,9 @@
                     />
                   </div>
                   <div class="form-group">
-                    <textarea
-                      class="form-control"
-                      id="exampleFormControlTextarea1"
-                      rows="3"
-                      v-model="product.des"
-                    ></textarea>
+                    <vue-editor v-model="product.des">
+
+                    </vue-editor>
                   </div>
                 </div>
                 <div class="col-sm-5">
@@ -149,8 +146,9 @@
                     <input
                       type="text"
                       class="form-control"
-                      placeholder="Product tag"
-                      v-model="product.tag"
+                      placeholder="Product tag" 
+                      @keyup.188="addTag"
+                      v-model="tag"
                     />
                   </div>
                   <div class="form-group">
@@ -172,7 +170,8 @@
             >
               Close
             </button>
-            <button @click="addProduct()" type="button" class="btn btn-primary">Save changes</button>
+            <button @click="addProduct()" type="button" class="btn btn-primary" v-if="modal == 'new'">Save changes</button>
+            <button @click="updateProduct()" type="button" class="btn btn-primary" v-if="modal == 'edit'">Update changes</button>
           </div>
         </div>
       </div>
@@ -182,12 +181,15 @@
 
 <script>
 import { fb, db } from "../firebase";
-import 'firebase/firestore';
+import { VueEditor } from "vue2-editor";
 
 export default {
   name: "Products",
   props: {
     msg: String,
+  },
+   components: {
+    VueEditor
   },
   data() {
     return {
@@ -195,11 +197,13 @@ export default {
         name: null,
         des: null,
         price: null,
-        tag: null,
+        tags: [],
         image: null
       },
       products: [],
       itemActive: null,
+      modal: null,
+      tag: null
     };
   },
   firestore () {
@@ -208,7 +212,12 @@ export default {
     }
   },
   methods: {
+    addTag() {
+      this.product.tags.push(this.tag);
+      this.tag = "";
+    },
     addNew() {
+      this.modal = "new";
       $("#addnew").modal("show");
     },
     deleteProduct(id) {
@@ -223,20 +232,26 @@ export default {
     }).then((result) => {
       if (result.value) {
           this.$firestore.products.doc(id).delete()
-        Swal.fire(
-          'Deleted!',
-          'Your file has been deleted.',
-          'success'
-        )
+        Toast.fire({
+          icon: 'success',
+          title: 'Signed in successfully'
+        })
       }
     })
     },
-    editProduct(producta) {
+    editProduct(product) {
+      this.modal = 'edit';
       this.product = product;
      $("#addnew").modal("show");
     },
     updateProduct() {
-      
+      this.$firestore.products.doc(this.product.id).update(this.product);
+      $("#addnew").modal("hide");
+      Toast.fire({
+          icon: 'success',
+          title: 'Update in successfully'
+      })
+      this.resetData();
     },
     readData() {
      
@@ -244,10 +259,21 @@ export default {
     addProduct() {
       this.$firestore.products.add(this.product);
       $("#addnew").modal("hide");
+      Toast.fire({
+          icon: 'success',
+          title: 'Save in successfully'
+      })
+      this.resetData();
     },
     resetData() {
-      Object.assign(this.$data, this.$options.data());
-    },
+      this.product = {
+        name: null,
+        des: null,
+        price: null,
+        tag: null,
+        image: null
+      }
+    }
   },
   created() {
     this.readData();

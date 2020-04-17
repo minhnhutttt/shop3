@@ -13,11 +13,30 @@ import './assets/app.scss';
 
 window.$ = window.jQuery = jQuery;
 Vue.config.productionTip = false
-Vue.use(VueFirestore)
+Vue.use(VueFirestore, {
+  key: 'id',         // the name of the property. Default is '.key'.
+  enumerable: true  //  whether it is enumerable or not. Default is true.
+})
 Vue.component('Navbar', require('./components/Navbar.vue').default);
 import Swal from 'sweetalert2'
 window.Swal = Swal;
 let app = '';
+
+
+const Toast = Swal.mixin({
+  toast: true,
+  position: 'top-end',
+  showConfirmButton: false,
+  timer: 3000,
+  timerProgressBar: true,
+  onOpen: (toast) => {
+    toast.addEventListener('mouseenter', Swal.stopTimer)
+    toast.addEventListener('mouseleave', Swal.resumeTimer)
+  }
+})
+
+window.Toast = Toast;
+
 
 fb.auth().onAuthStateChanged(function(user) {
   if (!app) {
